@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.19.0)
 
-project(shelly_plug_metrics_exporter VERSION 0.1.0 LANGUAGES C CXX)
+project(
+  shelly_plug_metrics_exporter
+  VERSION 0.1.0
+  LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(ABSL_PROPAGATE_CXX_STD ON)
@@ -38,8 +41,7 @@ target_link_libraries(
   target
   absl::statusor
   absl::strings
-  nlohmann_json::nlohmann_json
-)
+  nlohmann_json::nlohmann_json)
 
 add_library(parser STATIC parser.h parser.cc)
 target_link_libraries(
@@ -48,8 +50,7 @@ target_link_libraries(
   status_macros
   absl::statusor
   absl::strings
-  nlohmann_json::nlohmann_json
-)
+  nlohmann_json::nlohmann_json)
 
 add_library(poller STATIC poller.h poller.cc)
 target_link_libraries(
@@ -62,8 +63,7 @@ target_link_libraries(
   absl::log
   absl::status
   absl::statusor
-  absl::time
-)
+  absl::time)
 
 add_library(registry STATIC registry.h registry.cc)
 target_link_libraries(
@@ -73,8 +73,7 @@ target_link_libraries(
   absl::log
   absl::status
   absl::strings
-  prometheus-cpp::core
-)
+  prometheus-cpp::core)
 
 add_library(scraper STATIC scraper.h scraper.cc)
 target_link_libraries(
@@ -84,8 +83,7 @@ target_link_libraries(
   absl::status
   absl::statusor
   absl::strings
-  CURL::libcurl
-)
+  CURL::libcurl)
 
 add_library(shelly STATIC shelly.h shelly.cc)
 target_link_libraries(shelly absl::strings)
@@ -112,5 +110,4 @@ target_link_libraries(
   prometheus-cpp::core
   prometheus-cpp::pull
   nlohmann_json::nlohmann_json
-  CURL::libcurl
-)
+  CURL::libcurl)
