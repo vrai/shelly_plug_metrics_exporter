@@ -96,8 +96,10 @@ void Poller::ProcessTarget(const Target& target) {
   if (options_.success_callback) {
     options_.success_callback(target.name, metrics);
   }
-  LOG(INFO) << "Got successful response for target \"" << target.name
-            << "\": " << metrics.DebugString();
+  if (options_.verbose_logging) {
+    LOG(INFO) << "Got successful response for target \"" << target.name
+              << "\": " << metrics.DebugString();
+  }
 }
 
 absl::StatusOr<::shelly::Metrics> Poller::RetrieveMetrics(

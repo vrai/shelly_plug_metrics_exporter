@@ -34,6 +34,7 @@ ABSL_FLAG(absl::Duration, poll_period, absl::Seconds(15),
 ABSL_FLAG(std::string, targets_config_file, "./targets.json",
           "File name of the JSON targets config file.");
 ABSL_FLAG(bool, verbose_scraper, false, "If true, log verbose scraper output");
+ABSL_FLAG(bool, verbose_poller, false, "If true, log verbose poller output");
 
 std::function<void(int)> signal_handler_func;
 void SignalHandler(int signum) {
@@ -109,6 +110,7 @@ int main(int argc, char* argv[]) {
       std::move(parser), std::move(scraper),
       Poller::Options{
           .poll_period = poll_period,
+          .verbose_logging = absl::GetFlag(FLAGS_verbose_poller),
           .error_callback =
               [&registry](absl::string_view name, const absl::Status& error) {
                 registry->ErrorCallback(name, error);

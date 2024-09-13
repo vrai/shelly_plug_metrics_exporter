@@ -4,6 +4,7 @@
       "--metrics_addr", "0.0.0.0:9101",
       "--poll_period", "10s",
       "--targets_config_file", "${workspaceFolder}/targets.json",
+      "--verbose_poller"
     ]
   },
   "cmake.parallelJobs": 24,

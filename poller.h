@@ -20,6 +20,8 @@ class Poller final {
     absl::Duration poll_period = absl::Seconds(15);
     std::function<absl::Time()> time_func = [] { return absl::Now(); };
 
+    bool verbose_logging = false;
+
     std::function<void(absl::string_view name, const absl::Status& error)>
         error_callback;
     std::function<void(absl::string_view name,
