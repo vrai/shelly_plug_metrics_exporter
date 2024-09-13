@@ -37,7 +37,7 @@ absl::StatusOr<std::vector<Target>> ParseTargetsConfig(json& config) {
 
 absl::StatusOr<std::vector<Target>> LoadTargetsFromFile(
     std::string_view filename) {
-  std::ifstream stream({filename});
+  std::ifstream stream(std::string(filename).c_str());
   if (!stream.is_open()) {
     return absl::InvalidArgumentError(
         absl::Substitute("Failed to open file: $0", strerror(errno)));

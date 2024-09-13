@@ -45,14 +45,14 @@ class RegistryImpl final : public Registry {
                      .Name("shelly_voltage")
                      .Help("Last observed voltage of the target")
                      .Register(*registry_)),
-        current_(::prometheus::BuildGauge()
-                     .Name("shelly_current")
-                     .Help("Last observed current of the target")
-                     .Register(*registry_)),
         apower_(::prometheus::BuildGauge()
                     .Name("shelly_apower")
                     .Help("Last observed power of the target")
                     .Register(*registry_)),
+        current_(::prometheus::BuildGauge()
+                     .Name("shelly_current")
+                     .Help("Last observed current of the target")
+                     .Register(*registry_)),
         temp_c_(::prometheus::BuildGauge()
                     .Name("shelly_temp_c")
                     .Help("Last observed temperature of the target")
@@ -90,8 +90,8 @@ class RegistryImpl final : public Registry {
     const std::string name_str(name);
     TargetMetrics target_metrics = {
         .voltage = &(voltage_.Add({{kTargetLabel, name_str}})),
-        .current = &(current_.Add({{kTargetLabel, name_str}})),
         .apower = &(apower_.Add({{kTargetLabel, name_str}})),
+        .current = &(current_.Add({{kTargetLabel, name_str}})),
         .temp_c = &(temp_c_.Add({{kTargetLabel, name_str}})),
         .temp_f = &(temp_f_.Add({{kTargetLabel, name_str}})),
         .success_queries = &(success_queries_.Add({{kTargetLabel, name_str}})),

@@ -5,33 +5,29 @@ project(shelly_plug_metrics_exporter VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(ABSL_PROPAGATE_CXX_STD ON)
 
+include(cmake/CPM.cmake)
 include(FetchContent)
 
-FetchContent_Declare(
-  prometheus-cpp
-  GIT_REPOSITORY "https://github.com/jupp0r/prometheus-cpp.git"
-  GIT_TAG "v1.2.4")
-FetchContent_MakeAvailable(prometheus-cpp)
+CPMAddPackage(
+  NAME prometheus-cpp
+  GITHUB_REPOSITORY jupp0r/prometheus-cpp
+  VERSION 1.2.4
+  OPTIONS "ENABLE_PUSH OFF")
 
-FetchContent_Declare(
-  CURL
-  GIT_REPOSITORY "https://github.com/curl/curl.git"
-  GIT_TAG "curl-8_9_1"
-)
-FetchContent_MakeAvailable(CURL)
+CPMAddPackage(
+  NAME CURL
+  GITHUB_REPOSITORY curl/curl
+  GIT_TAG "curl-8_9_1")
 
-FetchContent_Declare(
-  nlohmann_json
-  GIT_REPOSITORY "https://github.com/nlohmann/json.git"
-  GIT_TAG "v3.11.3"
-)
-FetchContent_MakeAvailable(nlohmann_json)
+CPMAddPackage(
+  NAME nlohmann_json
+  GITHUB_REPOSITORY nlohmann/json
+  VERSION 3.11.3)
 
-FetchContent_Declare(
-  absl
-  GIT_REPOSITORY "https://github.com/abseil/abseil-cpp.git"
+CPMAddPackage(
+  NAME absl
+  GITHUB_REPOSITORY abseil/abseil-cpp
   GIT_TAG "20230802.1")
-FetchContent_MakeAvailable(absl)
 
 add_subdirectory(status_macros)
 
