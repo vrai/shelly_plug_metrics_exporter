@@ -1,0 +1,11 @@
+version: '3'
+services:
+  shelly-plug-metrics-exporter:
+    image: shelly-plug-metrics-exporter
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "0.0.0.0:9101:9100"
+    volumes:
+      - /etc/shelly_plug_metrics_exports:/opt/config
