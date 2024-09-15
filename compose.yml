@@ -1,6 +1,7 @@
 version: '3'
 services:
   shelly-plug-metrics-exporter:
+    restart: always
     image: shelly-plug-metrics-exporter
     build:
       context: .
