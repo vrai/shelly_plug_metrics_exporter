@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(ABSL_PROPAGATE_CXX_STD ON)
 
 include(cmake/CPM.cmake)
-include(Dart)
+include(CTest)
 include(FetchContent)
 
 CPMAddPackage(
