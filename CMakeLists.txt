@@ -9,13 +9,14 @@ set(CMAKE_CXX_STANDARD 20)
 set(ABSL_PROPAGATE_CXX_STD ON)
 
 include(cmake/CPM.cmake)
+include(Dart)
 include(FetchContent)
 
 CPMAddPackage(
   NAME prometheus-cpp
   GITHUB_REPOSITORY jupp0r/prometheus-cpp
   VERSION 1.2.4
-  OPTIONS "ENABLE_PUSH OFF")
+  OPTIONS "ENABLE_PUSH OFF" "ENABLE_TESTING OFF")
 
 CPMAddPackage(
   NAME CURL
@@ -32,6 +33,11 @@ CPMAddPackage(
   GITHUB_REPOSITORY abseil/abseil-cpp
   GIT_TAG "20230802.1")
 
+CPMAddPackage(
+  NAME googletest
+  GITHUB_REPOSITORY google/googletest
+  VERSION 1.15.2)
+
 add_subdirectory(status_macros)
 
 add_library(config STATIC config.h config.cc)
@@ -42,6 +48,16 @@ target_link_libraries(
   absl::statusor
   absl::strings
   nlohmann_json::nlohmann_json)
+
+add_executable(config_test config_test.cc)
+target_link_libraries(
+  config_test
+  absl::log
+  config
+  gtest_main
+  gtest
+  gmock
+)
 
 add_library(parser STATIC parser.h parser.cc)
 target_link_libraries(
@@ -111,3 +127,7 @@ target_link_libraries(
   prometheus-cpp::pull
   nlohmann_json::nlohmann_json
   CURL::libcurl)
+
+  enable_testing()
+
+  add_test(NAME ConfigTest COMMAND config_test)
