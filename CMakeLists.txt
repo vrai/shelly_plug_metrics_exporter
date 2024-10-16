@@ -68,6 +68,16 @@ target_link_libraries(
   absl::strings
   nlohmann_json::nlohmann_json)
 
+add_executable(parser_test parser_test.cc)
+target_link_libraries(
+  parser_test
+  absl::log
+  parser
+  gtest_main
+  gtest
+  gmock
+)
+
 add_library(poller STATIC poller.h poller.cc)
 target_link_libraries(
   poller
@@ -131,3 +141,4 @@ target_link_libraries(
   enable_testing()
 
   add_test(NAME ConfigTest COMMAND config_test)
+  add_test(NAME ParserTest COMMAND parser_test)
