@@ -38,6 +38,15 @@ CPMAddPackage(
   GITHUB_REPOSITORY google/googletest
   VERSION 1.15.2)
 
+CPMAddPackage(
+  NAME civetweb
+  GITHUB_REPOSITORY civetweb/civetweb
+  VERSION 1.16
+  OPTIONS "CIVETWEB_ENABLE_CXX OFF"
+          "CIVETWEB_BUILD_TESTING OFF"
+          "CIVETWEB_ENABLE_SERVER_EXECUTABLE OFF"
+          "CIVETWEB_ENABLE_ASAN OFF")
+
 add_subdirectory(status_macros)
 
 add_library(config STATIC config.h config.cc)
@@ -111,6 +120,18 @@ target_link_libraries(
   absl::strings
   CURL::libcurl)
 
+add_executable(scraper_test scraper_test.cc)
+target_link_libraries(
+  scraper_test
+  absl::log
+  absl::strings
+  civetweb-c-library
+  scraper
+  gtest_main
+  gtest
+  gmock
+)
+
 add_library(shelly STATIC shelly.h shelly.cc)
 target_link_libraries(shelly absl::strings)
 
@@ -142,3 +163,4 @@ target_link_libraries(
 
   add_test(NAME ConfigTest COMMAND config_test)
   add_test(NAME ParserTest COMMAND parser_test)
+  add_test(NAME ScraperTest COMMAND scraper_test)
