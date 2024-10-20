@@ -13,7 +13,8 @@ COPY . .
 RUN mkdir build && \
   cd build && \
   cmake .. && \
-  make -j 4
+  make -j 4 && \
+  make -j 4 test
 
 FROM debian:bookworm AS final
 WORKDIR /opt/app
