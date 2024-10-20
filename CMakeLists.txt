@@ -110,6 +110,16 @@ target_link_libraries(
   absl::strings
   prometheus-cpp::core)
 
+add_executable(registery_test registry_test.cc)
+target_link_libraries(
+  registery_test
+  absl::log
+  registry
+  gtest_main
+  gtest
+  gmock
+)
+
 add_library(scraper STATIC scraper.h scraper.cc)
 target_link_libraries(
   scraper
@@ -164,3 +174,4 @@ target_link_libraries(
   add_test(NAME ConfigTest COMMAND config_test)
   add_test(NAME ParserTest COMMAND parser_test)
   add_test(NAME ScraperTest COMMAND scraper_test)
+  add_test(NAME RegistryTest COMMAND registery_test)
