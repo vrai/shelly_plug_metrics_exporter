@@ -1,10 +1,12 @@
 #include "registry.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <optional>
 #include <string_view>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
 #include "absl/types/span.h"
 #include "prometheus/client_metric.h"
@@ -12,38 +14,28 @@
 
 namespace {
 
-::prometheus::MetricFamily FindMetricFamilyOrDie(
-    absl::Span<const ::prometheus::MetricFamily> families,
-    std::string_view name) {
-  std::optional<::prometheus::MetricFamily> result;
+using ::testing::AllOf;
+using ::testing::Contains;
+using ::testing::DoubleEq;
+using ::testing::Pair;
+using ::testing::UnorderedElementsAre;
+
+absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, double>>
+GetMetricsAsDoubles(absl::Span<const ::prometheus::MetricFamily> families) {
+  absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, double>>
+      results;
+
   for (const auto& family : families) {
-    if (family.name == name) {
-      result = family;
-      break;
+    for (const auto& metric : family.metric) {
+      CHECK(metric.label.size() == 1)
+          << "Expected metric \"" << family.name << "\" to have exactly one "
+          << "label";
+      results[metric.label.at(0).value][family.name] =
+          metric.counter.value != 0 ? metric.counter.value : metric.gauge.value;
     }
   }
-  CHECK(result.has_value())
-      << "Could not find metric family \"" << name << "\"";
-  return std::move(result).value();
-}
 
-::prometheus::ClientMetric FindClientMetricOrDie(
-    absl::Span<const ::prometheus::MetricFamily> families,
-    std::string_view name, std::string_view target) {
-  const auto family = FindMetricFamilyOrDie(families, name);
-
-  std::optional<::prometheus::ClientMetric> result;
-  for (const auto& metric : family.metric) {
-    CHECK(metric.label.size() == 1)
-        << "Expected metric \"" << name << "\" to have exactly one label";
-    if (metric.label.at(0).value == target) {
-      result = metric;
-      break;
-    }
-  }
-  CHECK(result.has_value()) << "Could not find metric \"" << name
-                            << "\" for target \"" << target << "\"";
-  return std::move(result).value();
+  return results;
 }
 
 }  // namespace
@@ -86,10 +78,10 @@ TEST(ErrorCallback, UnknownTarget) {
 
   registry->ErrorCallback("missing_target",
                           absl::InternalError("expected error"));
-  EXPECT_EQ(FindClientMetricOrDie(registry->GetRegistry()->Collect(),
-                                  "shelly_error_counter", "target")
-                .counter.value,
-            0);
+  EXPECT_THAT(
+      GetMetricsAsDoubles(registry->GetRegistry()->Collect()),
+      UnorderedElementsAre(Pair(
+          "target", Contains(Pair("shelly_error_counter", DoubleEq(0.0))))));
 }
 
 TEST(ErrorCallback, UpdatesMetric) {
@@ -97,27 +89,23 @@ TEST(ErrorCallback, UpdatesMetric) {
 
   // Create two targets and confirm that their error count is zero.
   ASSERT_TRUE(registry->AddTarget("target_one").ok());
-  EXPECT_EQ(FindClientMetricOrDie(registry->GetRegistry()->Collect(),
-                                  "shelly_error_counter", "target_one")
-                .counter.value,
-            0);
   ASSERT_TRUE(registry->AddTarget("target_two").ok());
-  EXPECT_EQ(FindClientMetricOrDie(registry->GetRegistry()->Collect(),
-                                  "shelly_error_counter", "target_two")
-                .counter.value,
-            0);
+  EXPECT_THAT(GetMetricsAsDoubles(registry->GetRegistry()->Collect()),
+              UnorderedElementsAre(
+                  Pair("target_one",
+                       Contains(Pair("shelly_error_counter", DoubleEq(0.0)))),
+                  Pair("target_two",
+                       Contains(Pair("shelly_error_counter", DoubleEq(0.0))))));
 
   // Call error callback for the first target and ensure that its error count
   // increments, but the second target's error count remains unchanged.
   registry->ErrorCallback("target_one", absl::InternalError("expected error"));
-  EXPECT_EQ(FindClientMetricOrDie(registry->GetRegistry()->Collect(),
-                                  "shelly_error_counter", "target_one")
-                .counter.value,
-            1);
-  EXPECT_EQ(FindClientMetricOrDie(registry->GetRegistry()->Collect(),
-                                  "shelly_error_counter", "target_two")
-                .counter.value,
-            0);
+  EXPECT_THAT(GetMetricsAsDoubles(registry->GetRegistry()->Collect()),
+              UnorderedElementsAre(
+                  Pair("target_one",
+                       Contains(Pair("shelly_error_counter", DoubleEq(1.0)))),
+                  Pair("target_two",
+                       Contains(Pair("shelly_error_counter", DoubleEq(0.0))))));
 }
 
 TEST(SuccessCallback, NoTargets) {
@@ -130,14 +118,11 @@ TEST(SuccessCallback, UnknownTarget) {
   ASSERT_TRUE(registry->AddTarget("target").ok());
 
   registry->SuccessCallback("missing_target", {.voltage = 120.0});
-  EXPECT_DOUBLE_EQ(FindClientMetricOrDie(registry->GetRegistry()->Collect(),
-                                         "shelly_voltage", "target")
-                       .gauge.value,
-                   0.0);
-  EXPECT_EQ(FindClientMetricOrDie(registry->GetRegistry()->Collect(),
-                                  "shelly_success_counter", "target")
-                .counter.value,
-            0);
+  EXPECT_THAT(GetMetricsAsDoubles(registry->GetRegistry()->Collect()),
+              UnorderedElementsAre(Pair(
+                  "target",
+                  AllOf(Contains(Pair("shelly_success_counter", DoubleEq(0.0))),
+                        Contains(Pair("shelly_voltage", DoubleEq(0.0)))))));
 }
 
 TEST(SuccessCallback, UpdateMetrics) {
@@ -145,24 +130,17 @@ TEST(SuccessCallback, UpdateMetrics) {
   ASSERT_TRUE(registry->AddTarget("target_one").ok());
   ASSERT_TRUE(registry->AddTarget("target_two").ok());
 
-  // Update the voltage for the first target and confirm it's applied.
+  // Update the voltage for the first target and confirm it's applied without
+  // affecting the second target.
   registry->SuccessCallback("target_one", {.voltage = 120.0});
-  EXPECT_DOUBLE_EQ(FindClientMetricOrDie(registry->GetRegistry()->Collect(),
-                                         "shelly_voltage", "target_one")
-                       .gauge.value,
-                   120.0);
-  EXPECT_EQ(FindClientMetricOrDie(registry->GetRegistry()->Collect(),
-                                  "shelly_success_counter", "target_one")
-                .counter.value,
-            1);
 
-  // Confirm that the second target remains unchanged.
-  EXPECT_DOUBLE_EQ(FindClientMetricOrDie(registry->GetRegistry()->Collect(),
-                                         "shelly_voltage", "target_two")
-                       .gauge.value,
-                   0.0);
-  EXPECT_EQ(FindClientMetricOrDie(registry->GetRegistry()->Collect(),
-                                  "shelly_success_counter", "target_two")
-                .counter.value,
-            0);
+  EXPECT_THAT(
+      GetMetricsAsDoubles(registry->GetRegistry()->Collect()),
+      UnorderedElementsAre(
+          Pair("target_one",
+               AllOf(Contains(Pair("shelly_success_counter", DoubleEq(1.0))),
+                     Contains(Pair("shelly_voltage", DoubleEq(120.0))))),
+          Pair("target_two",
+               AllOf(Contains(Pair("shelly_success_counter", DoubleEq(0.0))),
+                     Contains(Pair("shelly_voltage", DoubleEq(0.0)))))));
 }

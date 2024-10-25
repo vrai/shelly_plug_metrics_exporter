@@ -113,6 +113,7 @@ target_link_libraries(
 add_executable(registery_test registry_test.cc)
 target_link_libraries(
   registery_test
+  absl::flat_hash_map
   absl::log
   registry
   gtest_main
