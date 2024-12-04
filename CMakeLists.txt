@@ -100,6 +100,18 @@ target_link_libraries(
   absl::statusor
   absl::time)
 
+add_executable(poller_test poller_test.cc)
+target_link_libraries(
+  poller_test
+  absl::log
+  absl::status
+  absl::statusor
+  poller
+  gtest_main
+  gtest
+  gmock
+)
+
 add_library(registry STATIC registry.h registry.cc)
 target_link_libraries(
   registry
@@ -174,5 +186,6 @@ target_link_libraries(
 
   add_test(NAME ConfigTest COMMAND config_test)
   add_test(NAME ParserTest COMMAND parser_test)
+  add_test(NAME PollerTest COMMAND poller_test)
   add_test(NAME ScraperTest COMMAND scraper_test)
   add_test(NAME RegistryTest COMMAND registery_test)

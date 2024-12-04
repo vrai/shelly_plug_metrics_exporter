@@ -81,6 +81,11 @@ void Poller::Kill() {
   sleeper_.notify_all();
 }
 
+bool Poller::Alive() const {
+  std::unique_lock<std::mutex> lock(alive_mutex_);
+  return alive_;
+}
+
 void Poller::ProcessTarget(const Target& target) {
   auto maybe_metrics = RetrieveMetrics(target);
   if (!maybe_metrics.ok()) {

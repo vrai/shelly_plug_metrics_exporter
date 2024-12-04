@@ -82,6 +82,7 @@
     "vector": "cpp",
     "algorithm": "cpp",
     "*.h": "cpp",
+    "barrier": "cpp"
   },
   "clang-format.executable": "clang-format",
   "clang-format.fallbackStyle": "Google",

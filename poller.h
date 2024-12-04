@@ -38,6 +38,8 @@ class Poller final {
   void Run();
   void Kill();
 
+  bool Alive() const;
+
  private:
   struct Target final {
     std::string name;
@@ -51,7 +53,7 @@ class Poller final {
   std::vector<Target> targets_;
 
   bool alive_ = false;
-  std::mutex alive_mutex_;
+  mutable std::mutex alive_mutex_;
   std::mutex sleep_mutex_;
   std::condition_variable sleeper_;
 
