@@ -15,7 +15,11 @@ Periodically retrieving the energy use data from each Shelly plug target in
 its configuration file using the local REST API that Shelly devices provide,
 and making them available via HTTP in a Prometheus compatible format.
 
-TODO(vrai) Diagram
+Below is an example of typical configuration with three Shelly plugs being
+scraped by the metrics exporter, which in turn is scraped by a Prometheus
+instance:
+
+<img src="docs/images/example_network.svg" width="640px" />
 
 By default the Docker instance of the exporter will serve the metrics on port
 9101 rather than the standard 9100 for Prometheus metrics. This is to allow the
@@ -53,7 +57,7 @@ in the [configuration file](#configuration-file-format). For example, the
 `shelly_success_counter` values for the "My Shelly Plug" target would be
 output as:
 
-```json
+```prometheus
 shelly_success_counter{target="My Shelly Plug"} 123
 ```
 

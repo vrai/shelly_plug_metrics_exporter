@@ -1,3 +1,4 @@
 build
 .swp
 targets.json
+.DS_Store
