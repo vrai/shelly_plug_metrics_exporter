@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns:xl="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" xmlns:dc="http://purl.org/dc/elements/1.1/" version="1.1" viewBox="283 256.5 1041.75 482.948" width="1041.75" height="482.948">
+<svg xmlns:xl="http://www.w3.org/1999/xlink" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:dc="http://purl.org/dc/elements/1.1/" viewBox="279 252.5 1049.75 490.948" width="1049.75" height="490.948">
   <defs>
     <font-face font-family="Helvetica Neue" font-size="16" panose-1="2 0 5 3 0 0 0 2 0 4" units-per-em="1000" underline-position="-100" underline-thickness="50" slope="0" x-height="517" cap-height="714" ascent="951.9958" descent="-212.99744" font-weight="400">
       <font-face-src>
@@ -21,8 +21,9 @@
   <metadata> Produced by OmniGraffle 7.15.2 
     <dc:date>2024-12-17 18:35:39 +0000</dc:date>
   </metadata>
-  <g id="Canvas_1" stroke="none" fill-opacity="1" fill="none" stroke-dasharray="none" stroke-opacity="1">
+  <g id="Canvas_1" stroke="none" stroke-dasharray="none" fill-opacity="1" stroke-opacity="1" fill="none">
     <title>Canvas 1</title>
+    <rect fill="white" x="279" y="252.5" width="1049.75" height="490.948"/>
     <g id="Canvas_1: Layer 1">
       <title>Layer 1</title>
       <g id="Group_9">
@@ -161,7 +162,7 @@
       <g id="Graphic_38">
         <path d="M 798.75 586.79945 C 798.75 578.70003 797.0736 577.698 784.828 569.68235 L 784.6986 569.5994 C 772.3883 561.5 772.2602 561.5 759.6265 561.5 C 742.8044 561.5 666.75 561.5 666.75 561.5 L 666.75 646 C 666.75 646.5523 667.1977 647 667.75 647 L 797.75 647 C 798.3023 647 798.75 646.5523 798.75 646 L 798.75 586.79945 Z" fill="white"/>
         <path d="M 798.75 586.79945 C 798.75 578.70003 797.0736 577.698 784.828 569.68235 L 784.6986 569.5994 C 772.3883 561.5 772.2602 561.5 759.6265 561.5 C 742.8044 561.5 666.75 561.5 666.75 561.5 L 666.75 646 C 666.75 646.5523 667.1977 647 667.75 647 L 797.75 647 C 798.3023 647 798.75 646.5523 798.75 646 L 798.75 586.79945 Z M 798.75 586.3822 C 798.75 578.70003 798.6206 578.70003 772.2602 578.70003 L 772.2602 578.70003 C 772.2602 561.5838 772.2602 561.5 760.4 561.5" stroke="#23252c" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
-        <text transform="translate(671.75 576.578)" fill="#23252c">
+        <text transform="translate(671.75 585.802)" fill="#23252c">
           <tspan font-family="Helvetica Neue" font-size="16" font-weight="400" fill="#23252c" x="19.296" y="15">targets.json</tspan>
           <tspan font-family="Helvetica Neue" font-size="16" font-weight="400" fill="#23252c" x=".264" y="33.448">Configuration file</tspan>
         </text>
