@@ -4,15 +4,31 @@
 #include <gtest/gtest.h>
 
 #include <barrier>
+#include <latch>
+#include <mutex>
+#include <regex>
 #include <thread>
 
+#include "absl/log/check.h"
 #include "absl/strings/substitute.h"
 
-MATCHER_P(MetricsEq, cmp,
-          absl::Substitute("Equals Metrics: $0", cmp.DebugString())) {
-  return arg.apower == cmp.apower && arg.voltage == cmp.voltage &&
-         arg.current == cmp.current && arg.temp_c == cmp.temp_c &&
-         arg.temp_f == cmp.temp_f;
+MATCHER_P(MetricsEq, cmp, "") {
+  return testing::ExplainMatchResult(::testing::DoubleEq(arg.apower),
+                                     cmp.apower, result_listener) &&
+         testing::ExplainMatchResult(::testing::DoubleEq(arg.voltage),
+                                     cmp.voltage, result_listener) &&
+         testing::ExplainMatchResult(::testing::DoubleEq(arg.current),
+                                     cmp.current, result_listener) &&
+         testing::ExplainMatchResult(::testing::DoubleEq(arg.temp_c),
+                                     cmp.temp_c, result_listener) &&
+         testing::ExplainMatchResult(::testing::DoubleEq(arg.temp_f),
+                                     cmp.temp_f, result_listener);
+}
+
+MATCHER(MetricsPointwiseEq, "") {
+  const auto& lhs = ::testing::get<0>(arg);
+  const auto& rhs = ::testing::get<1>(arg);
+  return testing::ExplainMatchResult(MetricsEq(rhs), lhs, result_listener);
 }
 
 class MockParser : public Parser {
@@ -262,3 +278,65 @@ struct ParserReturnsMetricsTest final {
 };
 INSTANTIATE_TYPED_TEST_SUITE_P(ParserReturnsMetrics, BarrierTest,
                                ParserReturnsMetricsTest);
+
+TEST(Run, MultipleTargets) {
+  constexpr int kNumTargets = 10;
+  std::latch latch(kNumTargets + 1);
+
+  std::mutex received_metrics_mutex;
+  std::vector<::shelly::Metrics> received_metrics;
+
+  Fixture fixture(
+      /*error_callback=*/nullptr,
+      [&](absl::string_view name, const ::shelly::Metrics& metrics) {
+        std::cerr << "Success: " << name << " " << metrics.DebugString()
+                  << std::endl;
+        {
+          std::lock_guard<std::mutex> lock(received_metrics_mutex);
+          received_metrics.push_back(metrics);
+        }
+        latch.count_down();
+      });
+
+  // Use the hostname as a way to pass through the index as a unique
+  // identifier. This is then parsed out into the voltage field to ensure
+  // all targets are processed exactly once.
+  std::vector<::shelly::Metrics> expected_metrics;
+  for (int i = 0; i < kNumTargets; ++i) {
+    fixture.poller().AddTarget(absl::Substitute("target_$0", i),
+                               absl::Substitute("$0", i));
+    expected_metrics.push_back(
+        ::shelly::Metrics{.voltage = static_cast<double>(i)});
+  }
+  EXPECT_CALL(fixture.scraper(), Scrape(testing::_))
+      .Times(kNumTargets)
+      .WillRepeatedly(
+          testing::Invoke([](const std::string& hostname) -> ScraperResult {
+            const std::regex re("^http://(\\d+)/.*");
+            std::smatch match;
+            std::regex_search(hostname, match, re);
+            CHECK(match.size() == 2);
+            return ScraperResult{
+                .code = 200,
+                .content_type = "application/json",
+                .content = match[1].str(),
+            };
+          }));
+  EXPECT_CALL(fixture.parser(), Parse(testing::_))
+      .Times(kNumTargets)
+      .WillRepeatedly(testing::Invoke([](const std::string& content) {
+        double voltage = -1.0;
+        CHECK(absl::SimpleAtod(content, &voltage));
+        return ::shelly::Metrics{
+            .voltage = voltage,
+        };
+      }));
+
+  fixture.Run();
+  latch.arrive_and_wait();
+  fixture.Stop();
+
+  std::lock_guard<std::mutex> lock(received_metrics_mutex);
+  EXPECT_THAT(received_metrics, testing::UnorderedPointwise(
+                                    MetricsPointwiseEq(), expected_metrics));
+}
