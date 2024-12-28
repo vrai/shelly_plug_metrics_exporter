@@ -3,7 +3,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <barrier>
 #include <latch>
 #include <mutex>
 #include <regex>
@@ -123,39 +122,37 @@ TEST(Run, NoTargets) {
 }
 
 template <typename TestTraits>
-class BarrierTest : public ::testing::Test {
+class LatchTest : public ::testing::Test {
  public:
-  BarrierTest()
+  LatchTest()
       : fixture_(
             [this](absl::string_view name, const absl::Status& error) {
               error_ = error;
-              barrier_.arrive_and_wait();
+              latch_.arrive_and_wait();
             },
             [this](absl::string_view name, const ::shelly::Metrics& metrics) {
               success_name_ = std::string(name);
               success_metrics_ = metrics;
-              barrier_.arrive_and_wait();
+              latch_.arrive_and_wait();
             }),
-        barrier_(2, [] {}) {}
+        latch_(2) {}
 
  protected:
-  using BarrierCompleteFn = std::function<void()>;
-
   Fixture fixture_;
-  std::barrier<BarrierCompleteFn> barrier_;
+  std::latch latch_;
   absl::Status error_;
   std::string success_name_;
   ::shelly::Metrics success_metrics_;
 
   void Run() {
     fixture_.Run();
-    barrier_.arrive_and_wait();
+    latch_.arrive_and_wait();
     fixture_.Stop();
   }
 };
-TYPED_TEST_SUITE_P(BarrierTest);
+TYPED_TEST_SUITE_P(LatchTest);
 
-TYPED_TEST_P(BarrierTest, Test) {
+TYPED_TEST_P(LatchTest, Test) {
   TypeParam::SetExpectations(this->fixture_);
   TypeParam::AddTargets(this->fixture_);
   this->Run();
@@ -169,7 +166,7 @@ TYPED_TEST_P(BarrierTest, Test) {
   }
 }
 
-REGISTER_TYPED_TEST_SUITE_P(BarrierTest, Test);
+REGISTER_TYPED_TEST_SUITE_P(LatchTest, Test);
 
 struct ScraperErrorTest final {
   static constexpr absl::StatusCode kExpectedStatusCode =
@@ -188,7 +185,7 @@ struct ScraperErrorTest final {
     fixture.poller().AddTarget("test_target", "localhost:80");
   }
 };
-INSTANTIATE_TYPED_TEST_SUITE_P(ScraperError, BarrierTest, ScraperErrorTest);
+INSTANTIATE_TYPED_TEST_SUITE_P(ScraperError, LatchTest, ScraperErrorTest);
 
 struct ScraperReturnsHttpError final {
   static constexpr absl::StatusCode kExpectedStatusCode =
@@ -207,7 +204,7 @@ struct ScraperReturnsHttpError final {
     fixture.poller().AddTarget("test_target", "localhost:80");
   }
 };
-INSTANTIATE_TYPED_TEST_SUITE_P(ScraperReturnsHttp, BarrierTest,
+INSTANTIATE_TYPED_TEST_SUITE_P(ScraperReturnsHttp, LatchTest,
                                ScraperReturnsHttpError);
 
 struct ScraperReturnsNonJsonTest final {
@@ -227,7 +224,7 @@ struct ScraperReturnsNonJsonTest final {
     fixture.poller().AddTarget("test_target", "localhost:80");
   }
 };
-INSTANTIATE_TYPED_TEST_SUITE_P(ScraperReturnsNonJson, BarrierTest,
+INSTANTIATE_TYPED_TEST_SUITE_P(ScraperReturnsNonJson, LatchTest,
                                ScraperReturnsNonJsonTest);
 
 struct ParserReturnsErrorTest final {
@@ -249,7 +246,7 @@ struct ParserReturnsErrorTest final {
     fixture.poller().AddTarget("test_target", "localhost:80");
   }
 };
-INSTANTIATE_TYPED_TEST_SUITE_P(ParserReturnsError, BarrierTest,
+INSTANTIATE_TYPED_TEST_SUITE_P(ParserReturnsError, LatchTest,
                                ParserReturnsErrorTest);
 
 struct ParserReturnsMetricsTest final {
@@ -276,21 +273,21 @@ struct ParserReturnsMetricsTest final {
     fixture.poller().AddTarget("test_target", "localhost:80");
   }
 };
-INSTANTIATE_TYPED_TEST_SUITE_P(ParserReturnsMetrics, BarrierTest,
+INSTANTIATE_TYPED_TEST_SUITE_P(ParserReturnsMetrics, LatchTest,
                                ParserReturnsMetricsTest);
 
 TEST(Run, MultipleTargets) {
   constexpr int kNumTargets = 10;
   std::latch latch(kNumTargets + 1);
 
+  // The targets are processed in parallel so protect the receiving vector with
+  // a mutex.
   std::mutex received_metrics_mutex;
   std::vector<::shelly::Metrics> received_metrics;
 
   Fixture fixture(
       /*error_callback=*/nullptr,
       [&](absl::string_view name, const ::shelly::Metrics& metrics) {
-        std::cerr << "Success: " << name << " " << metrics.DebugString()
-                  << std::endl;
         {
           std::lock_guard<std::mutex> lock(received_metrics_mutex);
           received_metrics.push_back(metrics);

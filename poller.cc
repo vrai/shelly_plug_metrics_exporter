@@ -1,6 +1,7 @@
 #include "poller.h"
 
 #include <chrono>
+#include <future>
 
 #include "absl/log/check.h"
 #include "absl/log/die_if_null.h"
@@ -53,9 +54,16 @@ void Poller::Run() {
       }
     }
 
-    // TODO Use multiple threads for this.
+    // Process th targets in parallel and then block this thread until they have
+    // all completed.
+    std::vector<std::future<void>> futures;
+    futures.reserve(targets_.size());
     for (const auto& target : targets_) {
-      ProcessTarget(target);
+      futures.push_back(std::async(std::launch::async,
+                                   [this, &target] { ProcessTarget(target); }));
+    }
+    for (auto& future : futures) {
+      future.wait();
     }
 
     const auto delay =
